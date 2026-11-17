@@ -2,38 +2,57 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Mahasiswa;
 use Illuminate\Http\Request;
 
 class MahasiswaController extends Controller
 {
-    public function index()
+    public function tampil()
     {
-        $mahasiswa = [
-            (object) ['nim' => '2024001', 'nama' => 'Rakha Fernandes', 'prodi' => 'Teknik Informatika', 'semester' => 3, 'status' => 'Aktif'],
-            (object) ['nim' => '2024002', 'nama' => 'Fauzan Aminudin', 'prodi' => 'Sistem Informasi', 'semester' => 5, 'status' => 'Aktif'],
-            (object) ['nim' => '2024003', 'nama' => 'Raja Bagus', 'prodi' => 'Teknik Informatika', 'semester' => 1, 'status' => 'Aktif'],
-            (object) ['nim' => '2024004', 'nama' => 'Mahesa', 'prodi' => 'Sistem Informasi', 'semester' => 3, 'status' => 'Cuti'],
-            (object) ['nim' => '2024005', 'nama' => 'Fajri', 'prodi' => 'Teknik Informatika', 'semester' => 7, 'status' => 'Aktif'],
-        ];
-
-        return view('mahasiswa.index', compact('mahasiswa'));
+        $mahasiswa = Mahasiswa::all();
+        return view('tampilmahasiswa', compact('mahasiswa'));
     }
 
-    public function create()
+    public function detil($id)
     {
-        return view('mahasiswa.create');
+        $mahasiswa = Mahasiswa::find($id);
+        return view('detilmahasiswa', compact('mahasiswa'));
     }
 
-    public function store(Request $request)
+    public function apiIndex()
     {
-        $request->validate([
-            'nim' => 'required',
-            'nama' => 'required',
-            'prodi' => 'required',
-            'semester' => 'required',
-            'email' => 'required|email',
+        return response()->json(['data' => Mahasiswa::all()]);
+    }
+
+    public function apiShow($nim)
+    {
+        $mahasiswa = Mahasiswa::where('nim', $nim)->first();
+        return $mahasiswa
+            ? response()->json(['data' => $mahasiswa])
+            : response()->json(['message' => 'Mahasiswa tidak ditemukan'], 404);
+    }
+
+    public function apiStore(Request $request)
+    {
+        $data = $request->validate([
+            'nim' => 'required|string|max:20|unique:mahasiswa,nim',
+            'nama' => 'required|string|max:100',
+            'prodi' => 'required|string|max:100',
+            'email' => 'nullable|email|max:100',
+            'nohp' => 'nullable|string|max:20',
         ]);
 
-        return redirect('/mahasiswa')->with('success', 'Data mahasiswa berhasil ditambahkan!');
+        return response()->json(['data' => Mahasiswa::create($data)], 201);
+    }
+
+    public function apiDestroy($nim)
+    {
+        $mahasiswa = Mahasiswa::where('nim', $nim)->first();
+        if (!$mahasiswa) {
+            return response()->json(['message' => 'Mahasiswa tidak ditemukan'], 404);
+        }
+
+        $mahasiswa->delete();
+        return response()->json(null, 204);
     }
 }
